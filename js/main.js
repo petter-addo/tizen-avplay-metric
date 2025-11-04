@@ -205,7 +205,6 @@
             //			url:
             // 'http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest',
             // url: 'http://playready.directtaps.net/smoothstreaming/TTLSS720VC1/To_The_Limit_720.ism/Manifest'
-            // Playready license key and application ID
             options: {
                 info: {
                     beacon: '',
@@ -232,11 +231,11 @@
                 config.resolutionWidth = display.resolutionWidth;
 
                 // initialize player - loaded from videoPlayer.js
+                const avplay = webapis.avplay;
+                log("avplay ", avplay);
                 player = new VideoPlayer(config);
                 player.open(config.url);
                 registerMouseEvents();
-                const avplay = webapis.avplay;
-                log("avplay ", avplay);
             },
             function(error) {
                 log("An error occurred " + error.message);
@@ -244,9 +243,4 @@
         );
 
     }
-    window.onunload = function() {
-    	if (tracker) {
-    		tracker.unRegisterListeners();
-    	}
-	}
 }());

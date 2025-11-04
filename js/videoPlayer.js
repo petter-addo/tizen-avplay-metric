@@ -43,9 +43,10 @@ function VideoPlayer(config) {
      * @type {Boolean}
      */
     var isUhd = false;
-    var tizenTracker = new nrvideo.VideoTracker(config.player, config.options)
-    nrvideo.Core.addTracker(tizenTracker, config.options)
+    var tracker = new nrvideo.VideoTracker(config.player, config.options)
+    nrvideo.Core.addTracker(tracker, config.options)
     return {
+    	tizenTracker: tracker,
         /**
          * Function to initialize the playback.
          * @param {String} url - content url, if there is no value then take url from config
@@ -54,19 +55,19 @@ function VideoPlayer(config) {
     		/* Create listener object. */
             var listener = {
                 onbufferingstart: function () {
-                    log("Buffering start.");
+//                    log("Buffering start.");
                 },
                 onbufferingprogress: function (percent) {
-                    log("Buffering progress data : " + percent);
+//                    log("Buffering progress data : " + percent);
                 },
                 onbufferingcomplete: function () {
-                    log("Buffering complete.");
+//                    log("Buffering complete.");
                 },
                 oncurrentplaytime: function (currentTime) {
-                    log("Current playtime: " + currentTime);
+//                    log("Current playtime: " + currentTime);
                 },
                 onevent: function (eventType, eventData) {
-                    log("event type: " + eventType + ", data: " + eventData);
+//                    log("event type: " + eventType + ", data: " + eventData);
                 },
                 onstreamcompleted: function () {
                     log("Stream Completed");
@@ -90,6 +91,7 @@ function VideoPlayer(config) {
                     playerCoords.height
                 );
                 webapis.avplay.setListener(listener);
+                this.tizenTracker.sendRequest();
             } catch (e) {
                 log(e);
             }
@@ -102,22 +104,27 @@ function VideoPlayer(config) {
             }           
             
             if (webapis.avplay.getState() === 'IDLE') {
-            	webapis.avplay.prepare();                
+            	this.tizenTracker.sendRequest();
+            	webapis.avplay.prepare();
                 webapis.avplay.play();
-                tizenTracker.sendRequest();
+                console.log('onplay');
+                console.log('onplay state idle: ' + this.tizenTracker.state)
             } else if(webapis.avplay.getState() === 'PAUSED'){
+            	this.tizenTracker.sendBufferEnd();
+            	this.tizenTracker.sendResume();
+            	this.tizenTracker.sendStart();
             	webapis.avplay.play();
-            	tizenTracker.sendRequest();
-            	
-            }            
+            	console.log('onplay state paused: ' + this.tizenTracker.state)
+            	console.log('onpause');
+            }
         },
        
         /**
          * Function to stop current playback.
          */
         stop: function () {
+        	this.tizenTracker.sendEnd();
             webapis.avplay.stop();
-            tizenTracker.sendPause();
             //switch back from fullscreen to window if stream finished playing
             if (isFullscreen === true) {
                 this.toggleFullscreen();
@@ -133,19 +140,23 @@ function VideoPlayer(config) {
             if (!url) {
                 url = config.url;
             }
+            console.log('pause');
+            this.tizenTracker.sendPause();
             webapis.avplay.pause();
-            tizenTracker.sendPause();
+            console.log('onpause end');
         },
         /**
          * Jump forward 3 seconds (3000 ms).
          */
         ff: function () {
+        	this.tizenTracker.sendSeeking();
             webapis.avplay.jumpForward('3000');
         },
         /**
          * Rewind 3 seconds (3000 ms).
          */
         rew: function () {
+        	this.tizenTracker.sendSeeking();
             webapis.avplay.jumpBackward('3000');
         },
         /**
